@@ -224,8 +224,8 @@ function reproducirSonido(tipo) {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const TAM_CASILLA = 32;
-const ANCHO = canvas.width / TAM_CASILLA;   // 25 casillas (MÁS ANCHO)
-const ALTO = canvas.height / TAM_CASILLA;    // 17.5 → 17 casillas (MÁS ALTO)
+const ANCHO = canvas.width / TAM_CASILLA;
+const ALTO = canvas.height / TAM_CASILLA;
 
 let nivel = 1;
 let vidas = 3;
@@ -243,8 +243,8 @@ let JUGADOR_MUERTO = false;
 let teclasPresionadas = { arriba: false, abajo: false, izquierda: false, derecha: false };
 
 const VACIO = 0;
-const PARED = 1;      // INDESTRUCTIBLE
-const BLOQUE = 2;     // DESTRUIBLE
+const PARED = 1;
+const BLOQUE = 2;
 
 const COLOR_PARED = '#2c3e50';
 const COLOR_PARED_BORDE = '#1a252f';
@@ -252,10 +252,9 @@ const COLOR_BLOQUE = '#8b4513';
 const COLOR_BLOQUE_BORDE = '#5c2e0a';
 const COLOR_SUELO = '#0f0f23';
 
-// === GENERAR MAPA MÁS GRANDE ===
+// === GENERAR MAPA ===
 function generarMapa() {
     mapa = [];
-    // Bordes indestructibles
     for(let y=0; y<ALTO; y++) {
         mapa[y] = [];
         for(let x=0; x<ANCHO; x++) {
@@ -266,13 +265,11 @@ function generarMapa() {
             }
         }
     }
-    // Paredes fijas indestructibles en patrón
     for(let y=2; y<ALTO-1; y+=2) {
         for(let x=2; x<ANCHO-1; x+=2) {
             mapa[y][x] = PARED;
         }
     }
-    // Bloques destruibles
     let probabilidad = 0.28 + (nivel * 0.04);
     for(let y=1; y<ALTO-1; y++) {
         for(let x=1; x<ANCHO-1; x++) {
@@ -285,7 +282,7 @@ function generarMapa() {
     }
 }
 
-// === INICIALIZAR JUEGO ===
+// === INICIALIZAR ===
 function reiniciarNivel() {
     generarMapa();
     balas = [];
@@ -318,8 +315,7 @@ function reiniciarNivel() {
             x: ex + 0.5, y: ey + 0.5,
             dx: dx, dy: dy,
             ultimoMov: 0,
-            ultimoDisparo: 0,
-            direccion: Math.random() * Math.PI * 2
+            ultimoDisparo: 0
         });
     }
     actualizarUI();
@@ -353,13 +349,12 @@ function dibujarMapa() {
     }
 }
 
-// ✅ === DIBUJAR CARRO - BALA SALE DE LA PUNTA DEL CAÑÓN ===
+// ✅ === DIBUJAR CARRO - CAÑÓN Y PUNTA ALINEADOS ===
 function dibujarCarro() {
     const cx = jugador.x * TAM_CASILLA;
     const cy = jugador.y * TAM_CASILLA;
     const tam = TAM_CASILLA * 0.75;
 
-    // Ángulo según dirección
     let angulo = 0;
     if(jugador.dirX === 1) angulo = 0;
     else if(jugador.dirY === 1) angulo = Math.PI/2;
@@ -386,21 +381,21 @@ function dibujarCarro() {
     ctx.fillRect(tam/2-3, -tam/3-3, 6, 8);
     ctx.fillRect(tam/2-3, tam/3-5, 6, 8);
 
-    // Cañón - PUNTA EN (tam/2 + 10, 0)
+    // Cañón - DIBUJADO DESDE EL CENTRO HACIA ADELANTE
     ctx.fillStyle = '#ffd700';
-    ctx.fillRect(tam/4-2, -4, tam/2+4, 8);
+    ctx.fillRect(0, -4, tam/2 + 12, 8);  // ← CAÑÓN MÁS LARGO Y ALINEADO
     ctx.fillStyle = '#ff8800';
     ctx.beginPath();
-    ctx.moveTo(tam/2+2, -5);
-    ctx.lineTo(tam/2+10, 0);  // ← PUNTA DEL CAÑÓN AQUÍ
-    ctx.lineTo(tam/2+2, 5);
+    ctx.moveTo(tam/2 + 12, -6);
+    ctx.lineTo(tam/2 + 18, 0);   // ← ✅ PUNTA EXACTA
+    ctx.lineTo(tam/2 + 12, 6);
     ctx.closePath();
     ctx.fill();
 
     ctx.restore();
 }
 
-// ✅ === DIBUJAR ENEMIGO - BALA SALE DE SU CAÑÓN ===
+// ✅ === DIBUJAR ENEMIGO - CAÑÓN ALINEADO ===
 function dibujarMoto(enemigo) {
     const cx = enemigo.x * TAM_CASILLA;
     const cy = enemigo.y * TAM_CASILLA;
@@ -424,7 +419,6 @@ function dibujarMoto(enemigo) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Ruedas
     ctx.fillStyle = '#2c3e50';
     ctx.beginPath(); ctx.arc(-tam/3,-tam/3,5,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(-tam/3,tam/3,5,0,Math.PI*2); ctx.fill();
@@ -433,9 +427,14 @@ function dibujarMoto(enemigo) {
 
     // Cañón enemigo
     ctx.fillStyle = '#922b21';
-    ctx.fillRect(-tam/6, -tam/6, tam/2, tam/3);
+    ctx.fillRect(0, -3, tam/2 + 10, 6);
     ctx.fillStyle = '#ff6600';
-    ctx.fillRect(tam/3, -3, tam/3+4, 6);  // ← PUNTA DEL CAÑÓN ENEMIGO
+    ctx.beginPath();
+    ctx.moveTo(tam/2 + 10, -5);
+    ctx.lineTo(tam/2 + 16, 0);   // ← ✅ PUNTA EXACTA
+    ctx.lineTo(tam/2 + 10, 5);
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
 }
@@ -448,7 +447,7 @@ function dibujarBalas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffd700';
         ctx.beginPath();
-        ctx.arc(b.x*TAM_CASILLA+TAM_CASILLA/2, b.y*TAM_CASILLA+TAM_CASILLA/2, 6, 0, Math.PI*2);
+        ctx.arc(b.x*TAM_CASILLA + TAM_CASILLA/2, b.y*TAM_CASILLA + TAM_CASILLA/2, 6, 0, Math.PI*2);
         ctx.fill();
         ctx.restore();
     });
@@ -461,7 +460,7 @@ function dibujarBalasEnemigas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(b.x*TAM_CASILLA+TAM_CASILLA/2, b.y*TAM_CASILLA+TAM_CASILLA/2, 5, 0, Math.PI*2);
+        ctx.arc(b.x*TAM_CASILLA + TAM_CASILLA/2, b.y*TAM_CASILLA + TAM_CASILLA/2, 5, 0, Math.PI*2);
         ctx.fill();
         ctx.restore();
     });
@@ -484,7 +483,7 @@ function dibujarExplosiones() {
     });
 }
 
-// ✅ === COLISIONES MEJORADAS - NO ATRAVIESAN NADA ===
+// === COLISIONES ===
 function puedeMover(x, y) {
     const casX = Math.floor(x);
     const casY = Math.floor(y);
@@ -492,7 +491,6 @@ function puedeMover(x, y) {
     return mapa[casY][casX] === VACIO;
 }
 
-// Verifica si una posición está libre para el enemigo
 function puedeMoverEnemigo(x, y) {
     const casX = Math.floor(x + 0.5);
     const casY = Math.floor(y + 0.5);
@@ -500,31 +498,25 @@ function puedeMoverEnemigo(x, y) {
     return mapa[casY][casX] === VACIO;
 }
 
-// ✅ === MOVIMIENTO DEL JUGADOR ARREGLADO ===
+// === MOVIMIENTO JUGADOR ===
 function moverJugador(dx, dy) {
     if(JUGADOR_MUERTO) return;
     iniciarAudio();
 
-    // Guardar dirección para el cañón
     if(dx !== 0) { jugador.dirX = dx; jugador.dirY = 0; }
     if(dy !== 0) { jugador.dirY = dy; jugador.dirX = 0; }
 
     const nx = jugador.x + dx * 0.12;
     const ny = jugador.y + dy * 0.12;
-
-    // Comprobar todas las esquinas del carro
     const tam = 0.4;
-    if(puedeMover(nx, ny) && 
-       puedeMover(nx + tam, ny) && 
-       puedeMover(nx, ny + tam) && 
-       puedeMover(nx + tam, ny + tam)) {
+    if(puedeMover(nx, ny) && puedeMover(nx+tam, ny) && puedeMover(nx, ny+tam) && puedeMover(nx+tam, ny+tam)) {
         jugador.x = nx;
         jugador.y = ny;
     }
     comprobarChoqueEnemigos();
 }
 
-// ✅ === DISPARO DESDE LA PUNTA DEL CAÑÓN DEL JUGADOR ===
+// ✅ === BALA SALE EXACTAMENTE DE LA PUNTA DEL CAÑÓN ===
 function disparar() {
     if(JUGADOR_MUERTO) return;
     iniciarAudio();
@@ -532,74 +524,67 @@ function disparar() {
     if(ahora - jugador.ultimoDisparo < 400) return;
     jugador.ultimoDisparo = ahora;
 
-    // La bala SALE EXACTAMENTE DESDE LA PUNTA DEL CAÑÓN
+    // 🎯 LA PUNTA ESTÁ A 1.1 CASILLAS DEL CENTRO EN LA DIRECCIÓN DEL CAÑÓN
     balas.push({
-        x: jugador.x + jugador.dirX * 0.85,  // ← PUNTA DEL CAÑÓN
-        y: jugador.y + jugador.dirY * 0.85,
+        x: jugador.x + 0.5 + jugador.dirX * 1.1,  // ← ✅ EXACTAMENTE EN LA PUNTA DIBUJADA
+        y: jugador.y + 0.5 + jugador.dirY * 1.1,
         dx: jugador.dirX,
         dy: jugador.dirY
     });
     reproducirSonido('disparo');
 }
 
-// ✅ === DISPARO ENEMIGO DESDE SU CAÑÓN ===
+// ✅ === BALA ENEMIGA DESDE SU PUNTA ===
 function disparoEnemigo(enemigo) {
     const dx = jugador.x - enemigo.x;
     const dy = jugador.y - enemigo.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
     if(dist < 1) return;
 
-    // Dirección del enemigo hacia el jugador
-    let dirX = dx/dist;
-    let dirY = dy/dist;
+    const dirX = dx / dist;
+    const dirY = dy / dist;
 
-    // Bala sale desde la posición del enemigo + dirección
+    // 🎯 Bala nace en la punta del cañón enemigo
     balasEnemigas.push({
-        x: enemigo.x + 0.5 + dirX * 0.45,  // ← PUNTA DEL CAÑÓN ENEMIGO
-        y: enemigo.y + 0.5 + dirY * 0.45,
+        x: enemigo.x + 0.5 + dirX * 0.95,  // ← ✅ PUNTA DEL CAÑÓN ENEMIGO
+        y: enemigo.y + 0.5 + dirY * 0.95,
         dx: dirX,
         dy: dirY
     });
     reproducirSonido('disparoEnemigo');
 }
 
-// === ACTUALIZAR BALAS DEL JUGADOR ===
+// === ACTUALIZAR BALAS ===
 function actualizarBalas() {
     for(let i = balas.length-1; i >= 0; i--) {
         let b = balas[i];
         let nx = b.x + b.dx * 0.28;
         let ny = b.y + b.dy * 0.28;
-        let casX = Math.floor(nx + 0.5);
-        let casY = Math.floor(ny + 0.5);
+        let casX = Math.floor(nx);
+        let casY = Math.floor(ny);
 
-        // Choca con pared INDESTRUCTIBLE
-        if(mapa[casY]?.[casX] === PARED || casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) {
+        if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO || mapa[casY][casX] === PARED) {
             balas.splice(i, 1);
             continue;
         }
-
-        // Choca con bloque DESTRUIBLE
-        if(mapa[casY]?.[casX] === BLOQUE) {
+        if(mapa[casY][casX] === BLOQUE) {
             mapa[casY][casX] = VACIO;
             reproducirSonido('destruirBloque');
             balas.splice(i, 1);
             continue;
         }
-
-        // Golpea enemigo
         let idx = enemigos.findIndex(e => 
-            Math.abs(e.x - nx) < 0.6 && Math.abs(e.y - ny) < 0.6
+            Math.abs(e.x + 0.5 - nx) < 0.6 && Math.abs(e.y + 0.5 - ny) < 0.6
         );
         if(idx !== -1) {
             enemigos.splice(idx, 1);
             reproducirSonido('derrotarEnemigo');
-            explosiones.push({x: nx, y: ny, vida: 25, maxVida: 25});
+            explosiones.push({x: nx-0.5, y: ny-0.5, vida:25, maxVida:25});
             balas.splice(i, 1);
             actualizarUI();
             comprobarFinNivel();
             continue;
         }
-
         b.x = nx;
         b.y = ny;
     }
@@ -611,31 +596,25 @@ function actualizarBalasEnemigas() {
         let b = balasEnemigas[i];
         let nx = b.x + b.dx * 0.20;
         let ny = b.y + b.dy * 0.20;
-        let casX = Math.floor(nx + 0.5);
-        let casY = Math.floor(ny + 0.5);
+        let casX = Math.floor(nx);
+        let casY = Math.floor(ny);
 
-        // Sale del mapa o choca con pared
-        if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) {
-            balasEnemigas.splice(i, 1);
-            continue;
-        }
-        if(mapa[casY][casX] === PARED || mapa[casY][casX] === BLOQUE) {
+        if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO || mapa[casY][casX] === PARED || mapa[casY][casX] === BLOQUE) {
             balasEnemigas.splice(i, 1);
             continue;
         }
 
-        // Golpea al jugador
         if(!JUGADOR_MUERTO && Math.abs(nx - jugador.x - 0.5) < 0.5 && Math.abs(ny - jugador.y - 0.5) < 0.5) {
             balasEnemigas.splice(i, 1);
             JUGADOR_MUERTO = true;
             reproducirSonido('explosion');
             reproducirSonido('perderVida');
-            explosiones.push({x: jugador.x, y: jugador.y, vida: 40, maxVida: 40});
+            explosiones.push({x: jugador.x, y: jugador.y, vida:40, maxVida:40});
             vidas--;
             actualizarUI();
             setTimeout(() => {
                 if(vidas <= 0) {
-                    alert(`💀 ¡Perdiste! Llegaste al nivel ${nivel}\n¡Inténtalo de nuevo!`);
+                    alert(`💀 ¡Perdiste! Llegaste al nivel ${nivel}`);
                     nivel = 1; vidas = 3;
                     reiniciarNivel();
                 } else {
@@ -646,18 +625,16 @@ function actualizarBalasEnemigas() {
             }, 1000);
             continue;
         }
-
         b.x = nx;
         b.y = ny;
     }
     document.getElementById('balasEnemigas').textContent = balasEnemigas.length;
 }
 
-// ✅ === ENEMIGOS RECORREN TODO EL LABERINTO ===
+// === ENEMIGOS INTELIGENTES ===
 function actualizarEnemigos() {
     const ahora = Date.now();
     enemigos.forEach(e => {
-        // Disparar hacia el jugador
         if(ahora - e.ultimoDisparo > TIEMPO_DISPARO_ENEMIGO) {
             disparoEnemigo(e);
             e.ultimoDisparo = ahora;
@@ -666,11 +643,9 @@ function actualizarEnemigos() {
         if(ahora - e.ultimoMov < VELOCIDAD_ENEMIGOS) return;
         e.ultimoMov = ahora;
 
-        // Dirección hacia el jugador
         const dxJug = jugador.x - e.x;
         const dyJug = jugador.y - e.y;
 
-        // Posibles direcciones (hacia el jugador primero)
         let dirs = [];
         if(Math.abs(dxJug) > Math.abs(dyJug)) {
             dirs.push([dxJug > 0 ? 1 : -1, 0]);
@@ -683,64 +658,51 @@ function actualizarEnemigos() {
             dirs.push([dxJug > 0 ? -1 : 1, 0]);
             dirs.push([0, dyJug > 0 ? -1 : 1]);
         }
-
-        // También direcciones aleatorias para explorar
         dirs.push([1,0], [-1,0], [0,1], [0,-1]);
 
         let movido = false;
         for(let [dx, dy] of dirs) {
             if(puedeMoverEnemigo(e.x + dx, e.y + dy)) {
-                e.dx = dx;
-                e.dy = dy;
-                e.x += dx;
-                e.y += dy;
+                e.dx = dx; e.dy = dy;
+                e.x += dx; e.y += dy;
                 movido = true;
                 break;
             }
         }
-
-        // Si no puede moverse hacia adelante, gira
         if(!movido) {
             const todasDirs = [[1,0],[-1,0],[0,1],[0,-1]];
             for(let [dx, dy] of todasDirs) {
                 if(puedeMoverEnemigo(e.x + dx, e.y + dy)) {
-                    e.dx = dx;
-                    e.dy = dy;
-                    e.x += dx;
-                    e.y += dy;
+                    e.dx = dx; e.dy = dy;
+                    e.x += dx; e.y += dy;
                     break;
                 }
             }
         }
-
         comprobarChoqueEnemigos();
     });
 }
 
-// === CHOQUE JUGADOR-ENEMIGO ===
+// === CHOQUES ===
 function comprobarChoqueEnemigos() {
     if(JUGADOR_MUERTO) return;
     let tocado = enemigos.some(e => 
-        Math.abs(e.x - jugador.x - 0.5) < 0.55 && 
-        Math.abs(e.y - jugador.y - 0.5) < 0.55
+        Math.abs(e.x - jugador.x) < 0.55 && Math.abs(e.y - jugador.y) < 0.55
     );
     if(tocado) {
         iniciarAudio();
         JUGADOR_MUERTO = true;
         reproducirSonido('explosion');
         reproducirSonido('perderVida');
-        explosiones.push({x: jugador.x, y: jugador.y, vida: 40, maxVida: 40});
-        vidas--;
-        actualizarUI();
+        explosiones.push({x: jugador.x, y: jugador.y, vida:40, maxVida:40});
+        vidas--; actualizarUI();
         setTimeout(() => {
             if(vidas <= 0) {
                 alert(`💀 ¡Perdiste! Llegaste al nivel ${nivel}`);
                 nivel = 1; vidas = 3;
                 reiniciarNivel();
             } else {
-                jugador.x = 1.5;
-                jugador.y = 1.5;
-                JUGADOR_MUERTO = false;
+                jugador.x = 1.5; jugador.y = 1.5; JUGADOR_MUERTO = false;
             }
         }, 1000);
     }
@@ -768,7 +730,7 @@ function actualizarUI() {
     document.getElementById('enemigos').textContent = enemigos.length;
 }
 
-// === BUCLE DE MOVIMIENTO CONTINUO ===
+// === MOVIMIENTO CONTINUO ===
 function actualizarMovimientoContinuo() {
     if(teclasPresionadas.arriba) moverJugador(0, -1);
     if(teclasPresionadas.abajo) moverJugador(0, 1);
@@ -847,7 +809,6 @@ function bucle() {
     requestAnimationFrame(bucle);
 }
 bucle();
-
 </script>
 </body>
 </html>
