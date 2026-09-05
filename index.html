@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🚗 TANQUE EN EL LABERINTO 🏍️</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
         body { 
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             display: flex; 
@@ -20,9 +24,10 @@
         }
         h1 { 
             margin-bottom: 8px; 
-            font-size: 1.8rem; 
+            font-size: 1.8rem;
             text-shadow: 0 0 15px #ffd700;
             color: #ffd700;
+            text-align: center;
         }
         .info { 
             margin: 8px; 
@@ -33,29 +38,38 @@
             flex-wrap: wrap;
             justify-content: center;
         }
+        .info span {
+            background: rgba(255,215,0,0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
         canvas { 
-            border: 4px solid #ffd700; 
+            border: 4px solid #ffd700;
             background: #0f0f23;
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
             border-radius: 8px;
             max-width: 100%;
+            touch-action: none;
         }
-        .controles {
-            margin-top: 10px;
+        .controles { 
+            margin-top: 12px; 
             font-size: 13px;
             text-align: center;
             opacity: 0.9;
-            line-height: 1.5;
+            line-height: 1.6;
             max-width: 640px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
         }
-        .botones-movil {
-            display: none;
-            margin-top: 15px;
+        .botones-movil { 
+            display: none; 
+            margin-top: 15px; 
             grid-template-columns: repeat(3, 75px);
             grid-template-rows: repeat(3, 75px);
             gap: 8px;
         }
-        .btn {
+        .btn { 
             background: linear-gradient(145deg, #ffd700, #ffaa00);
             color: #000;
             border: none;
@@ -66,20 +80,41 @@
             touch-action: manipulation;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             user-select: none;
+            transition: transform 0.1s, background 0.1s;
         }
         .btn:active { 
             background: linear-gradient(145deg, #ffaa00, #ff8800);
             transform: scale(0.95);
         }
-        .vacio { background: transparent; box-shadow: none; }
-
-        @media (max-width: 768px) {
+        .vacio { 
+            background: transparent; 
+            box-shadow: none; 
+            pointer-events: none;
+        }
+        .mensaje-nivel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            color: #ffd700;
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 3px solid #ffd700;
+            font-size: 1.2rem;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 0 30px rgba(255,215,0,0.4);
+        }
+        @media (max-width: 768px) { 
             .botones-movil { display: grid; }
+            h1 { font-size: 1.4rem; }
+            .info { gap: 8px; font-size: 13px; }
         }
     </style>
 </head>
 <body>
-
     <h1>🚗 TANQUE EN EL LABERINTO 🏍️</h1>
     <div class="info">
         <span>🏆 Nivel: <span id="nivel">1</span></span>
@@ -89,10 +124,12 @@
     </div>
     <canvas id="canvas" width="800" height="560"></canvas>
     
+    <div class="mensaje-nivel" id="mensajeNivel"></div>
+
     <div class="controles">
         💻 Teclado: Flechas para moverse | ESPACIO para disparar<br>
         📱 Móvil: Mantén presionados los botones para moverte | Botón central para disparar<br>
-        🔊 ¡Activa el sonido! Hay música de fondo 🎵
+        🔊 ¡Toca la pantalla primero para activar el sonido! Hay música de fondo 🎵
     </div>
 
     <div class="botones-movil">
@@ -116,20 +153,26 @@ let audioCtx = null;
 let musicaReproduciendo = false;
 
 function iniciarAudio() {
-    if(!audioCtx) audioCtx = new AudioContext();
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-    if(!musicaReproduciendo) iniciarMusicaFondo();
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    if (!musicaReproduciendo) {
+        iniciarMusicaFondo();
+    }
 }
 
 // 🎵 MÚSICA DE FONDO
 function iniciarMusicaFondo() {
-    if(!audioCtx || musicaReproduciendo) return;
+    if (!audioCtx || musicaReproduciendo) return;
     musicaReproduciendo = true;
     const notas = [262, 294, 330, 349, 392, 440, 494, 523, 440, 392, 349, 330, 294, 262];
     let tiempo = audioCtx.currentTime;
 
     function generarMelodia() {
-        if(!musicaReproduciendo) return;
+        if (!musicaReproduciendo) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
@@ -150,14 +193,14 @@ function iniciarMusicaFondo() {
 
 // 🔊 Efectos de sonido
 function reproducirSonido(tipo) {
-    if(!audioCtx) return;
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     const ahora = audioCtx.currentTime;
 
-    switch(tipo) {
+    switch (tipo) {
         case 'disparo':
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(220, ahora);
@@ -255,26 +298,28 @@ const COLOR_SUELO = '#0f0f23';
 // === GENERAR MAPA ===
 function generarMapa() {
     mapa = [];
-    for(let y=0; y<ALTO; y++) {
+    for (let y = 0; y < ALTO; y++) {
         mapa[y] = [];
-        for(let x=0; x<ANCHO; x++) {
-            if(x === 0 || y === 0 || x === ANCHO-1 || y === ALTO-1) {
+        for (let x = 0; x < ANCHO; x++) {
+            if (x === 0 || y === 0 || x === ANCHO - 1 || y === ALTO - 1) {
                 mapa[y][x] = PARED;
             } else {
                 mapa[y][x] = VACIO;
             }
         }
     }
-    for(let y=2; y<ALTO-1; y+=2) {
-        for(let x=2; x<ANCHO-1; x+=2) {
+    // Paredes en patrón
+    for (let y = 2; y < ALTO - 1; y += 2) {
+        for (let x = 2; x < ANCHO - 1; x += 2) {
             mapa[y][x] = PARED;
         }
     }
+    // Bloques rompibles
     let probabilidad = 0.28 + (nivel * 0.04);
-    for(let y=1; y<ALTO-1; y++) {
-        for(let x=1; x<ANCHO-1; x++) {
-            if(mapa[y][x] === VACIO && !(x<=3 && y<=3)) {
-                if(Math.random() < probabilidad) {
+    for (let y = 1; y < ALTO - 1; y++) {
+        for (let x = 1; x < ANCHO - 1; x++) {
+            if (mapa[y][x] === VACIO && !(x <= 3 && y <= 3)) {
+                if (Math.random() < probabilidad) {
                     mapa[y][x] = BLOQUE;
                 }
             }
@@ -282,14 +327,25 @@ function generarMapa() {
     }
 }
 
-// === INICIALIZAR ===
+// === MOSTRAR MENSAJE DE NIVEL ===
+function mostrarMensajeNivel(mensaje, callback) {
+    const caja = document.getElementById('mensajeNivel');
+    caja.innerHTML = mensaje;
+    caja.style.display = 'block';
+    setTimeout(() => {
+        caja.style.display = 'none';
+        if (callback) callback();
+    }, 1800);
+}
+
+// === INICIALIZAR NIVEL ===
 function reiniciarNivel() {
     generarMapa();
     balas = [];
     balasEnemigas = [];
     explosiones = [];
     JUGADOR_MUERTO = false;
-    
+
     jugador = {
         x: 1.5, y: 1.5,
         dirX: 1, dirY: 0,
@@ -301,14 +357,16 @@ function reiniciarNivel() {
     VELOCIDAD_ENEMIGOS = Math.max(450, 800 - nivel * 80);
     TIEMPO_DISPARO_ENEMIGO = Math.max(1400, 2800 - nivel * 300);
 
-    for(let i=0; i<ENEMIGOS_MAX; i++) {
+    for (let i = 0; i < ENEMIGOS_MAX; i++) {
         let ex, ey;
+        let intentos = 0;
         do {
             ex = Math.floor(Math.random() * (ANCHO - 8)) + 5;
             ey = Math.floor(Math.random() * (ALTO - 6)) + 4;
-        } while(mapa[ey][ex] !== VACIO || (ex<=4 && ey<=4));
+            intentos++;
+        } while ((mapa[ey][ex] !== VACIO || (ex <= 4 && ey <= 4)) && intentos < 100);
 
-        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         const [dx, dy] = dirs[Math.floor(Math.random() * 4)];
 
         enemigos.push({
@@ -327,39 +385,43 @@ function dibujarMapa() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = 'rgba(50, 70, 90, 0.12)';
     ctx.lineWidth = 1;
-    for(let x=0; x<=ANCHO; x++) { ctx.beginPath(); ctx.moveTo(x*TAM_CASILLA,0); ctx.lineTo(x*TAM_CASILLA,canvas.height); ctx.stroke(); }
-    for(let y=0; y<=ALTO; y++) { ctx.beginPath(); ctx.moveTo(0,y*TAM_CASILLA); ctx.lineTo(canvas.width,y*TAM_CASILLA); ctx.stroke(); }
+    for (let x = 0; x <= ANCHO; x++) {
+        ctx.beginPath(); ctx.moveTo(x * TAM_CASILLA, 0); ctx.lineTo(x * TAM_CASILLA, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y <= ALTO; y++) {
+        ctx.beginPath(); ctx.moveTo(0, y * TAM_CASILLA); ctx.lineTo(canvas.width, y * TAM_CASILLA); ctx.stroke();
+    }
 
-    for(let y=0; y<ALTO; y++) {
-        for(let x=0; x<ANCHO; x++) {
-            if(mapa[y][x] === PARED) {
+    for (let y = 0; y < ALTO; y++) {
+        for (let x = 0; x < ANCHO; x++) {
+            if (mapa[y][x] === PARED) {
                 ctx.fillStyle = COLOR_PARED;
-                ctx.fillRect(x*TAM_CASILLA+2, y*TAM_CASILLA+2, TAM_CASILLA-4, TAM_CASILLA-4);
+                ctx.fillRect(x * TAM_CASILLA + 2, y * TAM_CASILLA + 2, TAM_CASILLA - 4, TAM_CASILLA - 4);
                 ctx.strokeStyle = COLOR_PARED_BORDE;
                 ctx.lineWidth = 2;
-                ctx.strokeRect(x*TAM_CASILLA+2, y*TAM_CASILLA+2, TAM_CASILLA-4, TAM_CASILLA-4);
-            } else if(mapa[y][x] === BLOQUE) {
+                ctx.strokeRect(x * TAM_CASILLA + 2, y * TAM_CASILLA + 2, TAM_CASILLA - 4, TAM_CASILLA - 4);
+            } else if (mapa[y][x] === BLOQUE) {
                 ctx.fillStyle = COLOR_BLOQUE;
-                ctx.fillRect(x*TAM_CASILLA+4, y*TAM_CASILLA+4, TAM_CASILLA-8, TAM_CASILLA-8);
+                ctx.fillRect(x * TAM_CASILLA + 4, y * TAM_CASILLA + 4, TAM_CASILLA - 8, TAM_CASILLA - 8);
                 ctx.strokeStyle = COLOR_BLOQUE_BORDE;
                 ctx.lineWidth = 2;
-                ctx.strokeRect(x*TAM_CASILLA+4, y*TAM_CASILLA+4, TAM_CASILLA-8, TAM_CASILLA-8);
+                ctx.strokeRect(x * TAM_CASILLA + 4, y * TAM_CASILLA + 4, TAM_CASILLA - 8, TAM_CASILLA - 8);
             }
         }
     }
 }
 
-// ✅ === DIBUJAR CARRO - CAÑÓN Y PUNTA ALINEADOS ===
+// ✅ === DIBUJAR TANQUE ===
 function dibujarCarro() {
     const cx = jugador.x * TAM_CASILLA;
     const cy = jugador.y * TAM_CASILLA;
     const tam = TAM_CASILLA * 0.75;
 
     let angulo = 0;
-    if(jugador.dirX === 1) angulo = 0;
-    else if(jugador.dirY === 1) angulo = Math.PI/2;
-    else if(jugador.dirX === -1) angulo = Math.PI;
-    else if(jugador.dirY === -1) angulo = -Math.PI/2;
+    if (jugador.dirX === 1) angulo = 0;
+    else if (jugador.dirY === 1) angulo = Math.PI / 2;
+    else if (jugador.dirX === -1) angulo = Math.PI;
+    else if (jugador.dirY === -1) angulo = -Math.PI / 2;
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -368,7 +430,7 @@ function dibujarCarro() {
     // Cuerpo
     ctx.fillStyle = '#3498db';
     ctx.beginPath();
-    ctx.roundRect(-tam/2, -tam/3, tam, tam*0.66, 6);
+    ctx.roundRect(-tam / 2, -tam / 3, tam, tam * 0.66, 6);
     ctx.fill();
     ctx.strokeStyle = '#2980b9';
     ctx.lineWidth = 2;
@@ -376,36 +438,36 @@ function dibujarCarro() {
 
     // Ruedas
     ctx.fillStyle = '#1a252f';
-    ctx.fillRect(-tam/2-3, -tam/3-3, 6, 8);
-    ctx.fillRect(-tam/2-3, tam/3-5, 6, 8);
-    ctx.fillRect(tam/2-3, -tam/3-3, 6, 8);
-    ctx.fillRect(tam/2-3, tam/3-5, 6, 8);
+    ctx.fillRect(-tam / 2 - 3, -tam / 3 - 3, 6, 8);
+    ctx.fillRect(-tam / 2 - 3, tam / 3 - 5, 6, 8);
+    ctx.fillRect(tam / 2 - 3, -tam / 3 - 3, 6, 8);
+    ctx.fillRect(tam / 2 - 3, tam / 3 - 5, 6, 8);
 
-    // Cañón - DIBUJADO DESDE EL CENTRO HACIA ADELANTE
+    // Cañón
     ctx.fillStyle = '#ffd700';
-    ctx.fillRect(0, -4, tam/2 + 12, 8);  // ← CAÑÓN MÁS LARGO Y ALINEADO
+    ctx.fillRect(0, -4, tam / 2 + 12, 8);
     ctx.fillStyle = '#ff8800';
     ctx.beginPath();
-    ctx.moveTo(tam/2 + 12, -6);
-    ctx.lineTo(tam/2 + 18, 0);   // ← ✅ PUNTA EXACTA
-    ctx.lineTo(tam/2 + 12, 6);
+    ctx.moveTo(tam / 2 + 12, -6);
+    ctx.lineTo(tam / 2 + 18, 0);
+    ctx.lineTo(tam / 2 + 12, 6);
     ctx.closePath();
     ctx.fill();
 
     ctx.restore();
 }
 
-// ✅ === DIBUJAR ENEMIGO - CAÑÓN ALINEADO ===
+// ✅ === DIBUJAR ENEMIGO ===
 function dibujarMoto(enemigo) {
     const cx = enemigo.x * TAM_CASILLA;
     const cy = enemigo.y * TAM_CASILLA;
     const tam = TAM_CASILLA * 0.65;
 
     let angulo = 0;
-    if(enemigo.dx === 1) angulo = 0;
-    else if(enemigo.dy === 1) angulo = Math.PI/2;
-    else if(enemigo.dx === -1) angulo = Math.PI;
-    else if(enemigo.dy === -1) angulo = -Math.PI/2;
+    if (enemigo.dx === 1) angulo = 0;
+    else if (enemigo.dy === 1) angulo = Math.PI / 2;
+    else if (enemigo.dx === -1) angulo = Math.PI;
+    else if (enemigo.dy === -1) angulo = -Math.PI / 2;
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -413,26 +475,26 @@ function dibujarMoto(enemigo) {
 
     ctx.fillStyle = '#e74c3c';
     ctx.beginPath();
-    ctx.roundRect(-tam/2, -tam/4, tam, tam/2, 4);
+    ctx.roundRect(-tam / 2, -tam / 4, tam, tam / 2, 4);
     ctx.fill();
     ctx.strokeStyle = '#c0392b';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#2c3e50';
-    ctx.beginPath(); ctx.arc(-tam/3,-tam/3,5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(-tam/3,tam/3,5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(tam/3,-tam/3,5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(tam/3,tam/3,5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-tam / 3, -tam / 3, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-tam / 3, tam / 3, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(tam / 3, -tam / 3, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(tam / 3, tam / 3, 5, 0, Math.PI * 2); ctx.fill();
 
     // Cañón enemigo
     ctx.fillStyle = '#922b21';
-    ctx.fillRect(0, -3, tam/2 + 10, 6);
+    ctx.fillRect(0, -3, tam / 2 + 10, 6);
     ctx.fillStyle = '#ff6600';
     ctx.beginPath();
-    ctx.moveTo(tam/2 + 10, -5);
-    ctx.lineTo(tam/2 + 16, 0);   // ← ✅ PUNTA EXACTA
-    ctx.lineTo(tam/2 + 10, 5);
+    ctx.moveTo(tam / 2 + 10, -5);
+    ctx.lineTo(tam / 2 + 16, 0);
+    ctx.lineTo(tam / 2 + 10, 5);
     ctx.closePath();
     ctx.fill();
 
@@ -447,7 +509,7 @@ function dibujarBalas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffd700';
         ctx.beginPath();
-        ctx.arc(b.x*TAM_CASILLA + TAM_CASILLA/2, b.y*TAM_CASILLA + TAM_CASILLA/2, 6, 0, Math.PI*2);
+        ctx.arc(b.x * TAM_CASILLA + TAM_CASILLA / 2, b.y * TAM_CASILLA + TAM_CASILLA / 2, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -460,7 +522,7 @@ function dibujarBalasEnemigas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(b.x*TAM_CASILLA + TAM_CASILLA/2, b.y*TAM_CASILLA + TAM_CASILLA/2, 5, 0, Math.PI*2);
+        ctx.arc(b.x * TAM_CASILLA + TAM_CASILLA / 2, b.y * TAM_CASILLA + TAM_CASILLA / 2, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -470,14 +532,14 @@ function dibujarExplosiones() {
     explosiones.forEach(exp => {
         ctx.save();
         ctx.globalAlpha = exp.vida / exp.maxVida;
-        const tam = (1 - exp.vida/exp.maxVida) * TAM_CASILLA * 2;
+        const tam = (1 - exp.vida / exp.maxVida) * TAM_CASILLA * 2;
         ctx.fillStyle = '#ff6600';
         ctx.beginPath();
-        ctx.arc(exp.x*TAM_CASILLA+TAM_CASILLA/2, exp.y*TAM_CASILLA+TAM_CASILLA/2, tam, 0, Math.PI*2);
+        ctx.arc(exp.x * TAM_CASILLA + TAM_CASILLA / 2, exp.y * TAM_CASILLA + TAM_CASILLA / 2, tam, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#ffff00';
         ctx.beginPath();
-        ctx.arc(exp.x*TAM_CASILLA+TAM_CASILLA/2, exp.y*TAM_CASILLA+TAM_CASILLA/2, tam*0.5, 0, Math.PI*2);
+        ctx.arc(exp.x * TAM_CASILLA + TAM_CASILLA / 2, exp.y * TAM_CASILLA + TAM_CASILLA / 2, tam * 0.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -487,46 +549,46 @@ function dibujarExplosiones() {
 function puedeMover(x, y) {
     const casX = Math.floor(x);
     const casY = Math.floor(y);
-    if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) return false;
+    if (casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) return false;
     return mapa[casY][casX] === VACIO;
 }
 
 function puedeMoverEnemigo(x, y) {
     const casX = Math.floor(x + 0.5);
     const casY = Math.floor(y + 0.5);
-    if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) return false;
+    if (casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) return false;
     return mapa[casY][casX] === VACIO;
 }
 
 // === MOVIMIENTO JUGADOR ===
 function moverJugador(dx, dy) {
-    if(JUGADOR_MUERTO) return;
+    if (JUGADOR_MUERTO) return;
     iniciarAudio();
 
-    if(dx !== 0) { jugador.dirX = dx; jugador.dirY = 0; }
-    if(dy !== 0) { jugador.dirY = dy; jugador.dirX = 0; }
+    if (dx !== 0) { jugador.dirX = dx; jugador.dirY = 0; }
+    if (dy !== 0) { jugador.dirY = dy; jugador.dirX = 0; }
 
     const nx = jugador.x + dx * 0.12;
     const ny = jugador.y + dy * 0.12;
     const tam = 0.4;
-    if(puedeMover(nx, ny) && puedeMover(nx+tam, ny) && puedeMover(nx, ny+tam) && puedeMover(nx+tam, ny+tam)) {
+    if (puedeMover(nx, ny) && puedeMover(nx + tam, ny) &&
+        puedeMover(nx, ny + tam) && puedeMover(nx + tam, ny + tam)) {
         jugador.x = nx;
         jugador.y = ny;
     }
     comprobarChoqueEnemigos();
 }
 
-// ✅ === BALA SALE EXACTAMENTE DE LA PUNTA DEL CAÑÓN ===
+// ✅ === DISPARO JUGADOR ===
 function disparar() {
-    if(JUGADOR_MUERTO) return;
+    if (JUGADOR_MUERTO) return;
     iniciarAudio();
     const ahora = Date.now();
-    if(ahora - jugador.ultimoDisparo < 400) return;
+    if (ahora - jugador.ultimoDisparo < 400) return;
     jugador.ultimoDisparo = ahora;
 
-    // 🎯 LA PUNTA ESTÁ A 1.1 CASILLAS DEL CENTRO EN LA DIRECCIÓN DEL CAÑÓN
     balas.push({
-        x: jugador.x + 0.5 + jugador.dirX * 1.1,  // ← ✅ EXACTAMENTE EN LA PUNTA DIBUJADA
+        x: jugador.x + 0.5 + jugador.dirX * 1.1,
         y: jugador.y + 0.5 + jugador.dirY * 1.1,
         dx: jugador.dirX,
         dy: jugador.dirY
@@ -534,19 +596,18 @@ function disparar() {
     reproducirSonido('disparo');
 }
 
-// ✅ === BALA ENEMIGA DESDE SU PUNTA ===
+// ✅ === DISPARO ENEMIGO ===
 function disparoEnemigo(enemigo) {
     const dx = jugador.x - enemigo.x;
     const dy = jugador.y - enemigo.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if(dist < 1) return;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 1) return;
 
     const dirX = dx / dist;
     const dirY = dy / dist;
 
-    // 🎯 Bala nace en la punta del cañón enemigo
     balasEnemigas.push({
-        x: enemigo.x + 0.5 + dirX * 0.95,  // ← ✅ PUNTA DEL CAÑÓN ENEMIGO
+        x: enemigo.x + 0.5 + dirX * 0.95,
         y: enemigo.y + 0.5 + dirY * 0.95,
         dx: dirX,
         dy: dirY
@@ -556,30 +617,30 @@ function disparoEnemigo(enemigo) {
 
 // === ACTUALIZAR BALAS ===
 function actualizarBalas() {
-    for(let i = balas.length-1; i >= 0; i--) {
+    for (let i = balas.length - 1; i >= 0; i--) {
         let b = balas[i];
         let nx = b.x + b.dx * 0.28;
         let ny = b.y + b.dy * 0.28;
         let casX = Math.floor(nx);
         let casY = Math.floor(ny);
 
-        if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO || mapa[casY][casX] === PARED) {
+        if (casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO || mapa[casY][casX] === PARED) {
             balas.splice(i, 1);
             continue;
         }
-        if(mapa[casY][casX] === BLOQUE) {
+        if (mapa[casY][casX] === BLOQUE) {
             mapa[casY][casX] = VACIO;
             reproducirSonido('destruirBloque');
             balas.splice(i, 1);
             continue;
         }
-        let idx = enemigos.findIndex(e => 
+        let idx = enemigos.findIndex(e =>
             Math.abs(e.x + 0.5 - nx) < 0.6 && Math.abs(e.y + 0.5 - ny) < 0.6
         );
-        if(idx !== -1) {
+        if (idx !== -1) {
             enemigos.splice(idx, 1);
             reproducirSonido('derrotarEnemigo');
-            explosiones.push({x: nx-0.5, y: ny-0.5, vida:25, maxVida:25});
+            explosiones.push({ x: nx - 0.5, y: ny - 0.5, vida: 25, maxVida: 25 });
             balas.splice(i, 1);
             actualizarUI();
             comprobarFinNivel();
@@ -592,31 +653,34 @@ function actualizarBalas() {
 
 // === ACTUALIZAR BALAS ENEMIGAS ===
 function actualizarBalasEnemigas() {
-    for(let i = balasEnemigas.length-1; i >= 0; i--) {
+    for (let i = balasEnemigas.length - 1; i >= 0; i--) {
         let b = balasEnemigas[i];
         let nx = b.x + b.dx * 0.20;
         let ny = b.y + b.dy * 0.20;
         let casX = Math.floor(nx);
         let casY = Math.floor(ny);
 
-        if(casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO || mapa[casY][casX] === PARED || mapa[casY][casX] === BLOQUE) {
+        if (casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO ||
+            mapa[casY][casX] === PARED || mapa[casY][casX] === BLOQUE) {
             balasEnemigas.splice(i, 1);
             continue;
         }
 
-        if(!JUGADOR_MUERTO && Math.abs(nx - jugador.x - 0.5) < 0.5 && Math.abs(ny - jugador.y - 0.5) < 0.5) {
+        if (!JUGADOR_MUERTO && Math.abs(nx - jugador.x - 0.5) < 0.5 &&
+            Math.abs(ny - jugador.y - 0.5) < 0.5) {
             balasEnemigas.splice(i, 1);
             JUGADOR_MUERTO = true;
             reproducirSonido('explosion');
             reproducirSonido('perderVida');
-            explosiones.push({x: jugador.x, y: jugador.y, vida:40, maxVida:40});
+            explosiones.push({ x: jugador.x, y: jugador.y, vida: 40, maxVida: 40 });
             vidas--;
             actualizarUI();
             setTimeout(() => {
-                if(vidas <= 0) {
-                    alert(`💀 ¡Perdiste! Llegaste al nivel ${nivel}`);
-                    nivel = 1; vidas = 3;
-                    reiniciarNivel();
+                if (vidas <= 0) {
+                    mostrarMensajeNivel(`💀 ¡Perdiste!<br>Llegaste al nivel ${nivel}`, () => {
+                        nivel = 1; vidas = 3;
+                        reiniciarNivel();
+                    });
                 } else {
                     jugador.x = 1.5;
                     jugador.y = 1.5;
@@ -635,19 +699,19 @@ function actualizarBalasEnemigas() {
 function actualizarEnemigos() {
     const ahora = Date.now();
     enemigos.forEach(e => {
-        if(ahora - e.ultimoDisparo > TIEMPO_DISPARO_ENEMIGO) {
+        if (ahora - e.ultimoDisparo > TIEMPO_DISPARO_ENEMIGO) {
             disparoEnemigo(e);
             e.ultimoDisparo = ahora;
         }
 
-        if(ahora - e.ultimoMov < VELOCIDAD_ENEMIGOS) return;
+        if (ahora - e.ultimoMov < VELOCIDAD_ENEMIGOS) return;
         e.ultimoMov = ahora;
 
         const dxJug = jugador.x - e.x;
         const dyJug = jugador.y - e.y;
 
         let dirs = [];
-        if(Math.abs(dxJug) > Math.abs(dyJug)) {
+        if (Math.abs(dxJug) > Math.abs(dyJug)) {
             dirs.push([dxJug > 0 ? 1 : -1, 0]);
             dirs.push([0, dyJug > 0 ? 1 : -1]);
             dirs.push([0, dyJug > 0 ? -1 : 1]);
@@ -658,21 +722,21 @@ function actualizarEnemigos() {
             dirs.push([dxJug > 0 ? -1 : 1, 0]);
             dirs.push([0, dyJug > 0 ? -1 : 1]);
         }
-        dirs.push([1,0], [-1,0], [0,1], [0,-1]);
+        dirs.push([1, 0], [-1, 0], [0, 1], [0, -1]);
 
         let movido = false;
-        for(let [dx, dy] of dirs) {
-            if(puedeMoverEnemigo(e.x + dx, e.y + dy)) {
+        for (let [dx, dy] of dirs) {
+            if (puedeMoverEnemigo(e.x + dx, e.y + dy)) {
                 e.dx = dx; e.dy = dy;
                 e.x += dx; e.y += dy;
                 movido = true;
                 break;
             }
         }
-        if(!movido) {
-            const todasDirs = [[1,0],[-1,0],[0,1],[0,-1]];
-            for(let [dx, dy] of todasDirs) {
-                if(puedeMoverEnemigo(e.x + dx, e.y + dy)) {
+        if (!movido) {
+            const todasDirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+            for (let [dx, dy] of todasDirs) {
+                if (puedeMoverEnemigo(e.x + dx, e.y + dy)) {
                     e.dx = dx; e.dy = dy;
                     e.x += dx; e.y += dy;
                     break;
@@ -685,22 +749,23 @@ function actualizarEnemigos() {
 
 // === CHOQUES ===
 function comprobarChoqueEnemigos() {
-    if(JUGADOR_MUERTO) return;
-    let tocado = enemigos.some(e => 
+    if (JUGADOR_MUERTO) return;
+    let tocado = enemigos.some(e =>
         Math.abs(e.x - jugador.x) < 0.55 && Math.abs(e.y - jugador.y) < 0.55
     );
-    if(tocado) {
+    if (tocado) {
         iniciarAudio();
         JUGADOR_MUERTO = true;
         reproducirSonido('explosion');
         reproducirSonido('perderVida');
-        explosiones.push({x: jugador.x, y: jugador.y, vida:40, maxVida:40});
+        explosiones.push({ x: jugador.x, y: jugador.y, vida: 40, maxVida: 40 });
         vidas--; actualizarUI();
         setTimeout(() => {
-            if(vidas <= 0) {
-                alert(`💀 ¡Perdiste! Llegaste al nivel ${nivel}`);
-                nivel = 1; vidas = 3;
-                reiniciarNivel();
+            if (vidas <= 0) {
+                mostrarMensajeNivel(`💀 ¡Perdiste!<br>Llegaste al nivel ${nivel}`, () => {
+                    nivel = 1; vidas = 3;
+                    reiniciarNivel();
+                });
             } else {
                 jugador.x = 1.5; jugador.y = 1.5; JUGADOR_MUERTO = false;
             }
@@ -709,18 +774,17 @@ function comprobarChoqueEnemigos() {
 }
 
 function actualizarExplosiones() {
-    for(let i = explosiones.length-1; i >= 0; i--) {
+    for (let i = explosiones.length - 1; i >= 0; i--) {
         explosiones[i].vida--;
-        if(explosiones[i].vida <= 0) explosiones.splice(i, 1);
+        if (explosiones[i].vida <= 0) explosiones.splice(i, 1);
     }
 }
 
 function comprobarFinNivel() {
-    if(enemigos.length === 0) {
+    if (enemigos.length === 0) {
         reproducirSonido('nivelSuperado');
         nivel++;
-        alert(`🎉 ¡Nivel ${nivel-1} COMPLETADO!\nNivel ${nivel}: Más enemigos, más rápidos y disparan más seguido!`);
-        reiniciarNivel();
+        mostrarMensajeNivel(`🎉 ¡Nivel ${nivel - 1} COMPLETADO!<br>Preparando nivel ${nivel}...`, reiniciarNivel);
     }
 }
 
@@ -732,28 +796,28 @@ function actualizarUI() {
 
 // === MOVIMIENTO CONTINUO ===
 function actualizarMovimientoContinuo() {
-    if(teclasPresionadas.arriba) moverJugador(0, -1);
-    if(teclasPresionadas.abajo) moverJugador(0, 1);
-    if(teclasPresionadas.izquierda) moverJugador(-1, 0);
-    if(teclasPresionadas.derecha) moverJugador(1, 0);
+    if (teclasPresionadas.arriba) moverJugador(0, -1);
+    if (teclasPresionadas.abajo) moverJugador(0, 1);
+    if (teclasPresionadas.izquierda) moverJugador(-1, 0);
+    if (teclasPresionadas.derecha) moverJugador(1, 0);
 }
 
 // === CONTROLES TECLADO ===
 document.addEventListener('keydown', e => {
-    if(JUGADOR_MUERTO) return;
+    if (JUGADOR_MUERTO) return;
     iniciarAudio();
-    if(e.key === 'ArrowUp')    { teclasPresionadas.arriba = true; }
-    if(e.key === 'ArrowDown')  { teclasPresionadas.abajo = true; }
-    if(e.key === 'ArrowLeft')  { teclasPresionadas.izquierda = true; }
-    if(e.key === 'ArrowRight') { teclasPresionadas.derecha = true; }
-    if(e.key === ' ')          { e.preventDefault(); disparar(); }
+    if (e.key === 'ArrowUp') teclasPresionadas.arriba = true;
+    if (e.key === 'ArrowDown') teclasPresionadas.abajo = true;
+    if (e.key === 'ArrowLeft') teclasPresionadas.izquierda = true;
+    if (e.key === 'ArrowRight') teclasPresionadas.derecha = true;
+    if (e.key === ' ') { e.preventDefault(); disparar(); }
 });
 
 document.addEventListener('keyup', e => {
-    if(e.key === 'ArrowUp')    teclasPresionadas.arriba = false;
-    if(e.key === 'ArrowDown')  teclasPresionadas.abajo = false;
-    if(e.key === 'ArrowLeft')  teclasPresionadas.izquierda = false;
-    if(e.key === 'ArrowRight') teclasPresionadas.derecha = false;
+    if (e.key === 'ArrowUp') teclasPresionadas.arriba = false;
+    if (e.key === 'ArrowDown') teclasPresionadas.abajo = false;
+    if (e.key === 'ArrowLeft') teclasPresionadas.izquierda = false;
+    if (e.key === 'ArrowRight') teclasPresionadas.derecha = false;
 });
 
 // === CONTROLES TÁCTILES ===
@@ -762,17 +826,17 @@ function configurarBoton(id, dir) {
     const presionar = (e) => {
         e.preventDefault();
         iniciarAudio();
-        if(dir === 'arriba') teclasPresionadas.arriba = true;
-        else if(dir === 'abajo') teclasPresionadas.abajo = true;
-        else if(dir === 'izquierda') teclasPresionadas.izquierda = true;
-        else if(dir === 'derecha') teclasPresionadas.derecha = true;
+        if (dir === 'arriba') teclasPresionadas.arriba = true;
+        else if (dir === 'abajo') teclasPresionadas.abajo = true;
+        else if (dir === 'izquierda') teclasPresionadas.izquierda = true;
+        else if (dir === 'derecha') teclasPresionadas.derecha = true;
     };
     const soltar = (e) => {
         e.preventDefault();
-        if(dir === 'arriba') teclasPresionadas.arriba = false;
-        else if(dir === 'abajo') teclasPresionadas.abajo = false;
-        else if(dir === 'izquierda') teclasPresionadas.izquierda = false;
-        else if(dir === 'derecha') teclasPresionadas.derecha = false;
+        if (dir === 'arriba') teclasPresionadas.arriba = false;
+        else if (dir === 'abajo') teclasPresionadas.abajo = false;
+        else if (dir === 'izquierda') teclasPresionadas.izquierda = false;
+        else if (dir === 'derecha') teclasPresionadas.derecha = false;
     };
     btn.addEventListener('touchstart', presionar);
     btn.addEventListener('touchend', soltar);
@@ -790,8 +854,9 @@ configurarBoton('btnDerecha', 'derecha');
 document.getElementById('btnDisparar').addEventListener('touchstart', e => { e.preventDefault(); disparar(); });
 document.getElementById('btnDisparar').addEventListener('mousedown', e => { e.preventDefault(); disparar(); });
 
-// === BUCLE PRINCIPAL ===
+// === INICIO Y BUCLE ===
 reiniciarNivel();
+
 function bucle() {
     actualizarMovimientoContinuo();
     actualizarBalas();
@@ -801,7 +866,7 @@ function bucle() {
 
     dibujarMapa();
     enemigos.forEach(e => dibujarMoto(e));
-    if(!JUGADOR_MUERTO) dibujarCarro();
+    if (!JUGADOR_MUERTO) dibujarCarro();
     dibujarBalas();
     dibujarBalasEnemigas();
     dibujarExplosiones();
