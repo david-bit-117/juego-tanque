@@ -267,8 +267,9 @@ function reproducirSonido(tipo) {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const TAM_CASILLA = 32;
-const ANCHO = canvas.width / TAM_CASILLA;
-const ALTO = canvas.height / TAM_CASILLA;
+// Corrección 1: Usar Math.floor para evitar decimales que rompen las paredes
+const ANCHO = Math.floor(canvas.width / TAM_CASILLA);
+const ALTO = Math.floor(canvas.height / TAM_CASILLA);
 
 let nivel = 1;
 let vidas = 3;
@@ -509,7 +510,8 @@ function dibujarBalas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffd700';
         ctx.beginPath();
-        ctx.arc(b.x * TAM_CASILLA + TAM_CASILLA / 2, b.y * TAM_CASILLA + TAM_CASILLA / 2, 6, 0, Math.PI * 2);
+        // Corrección 6: Dibujar la bala exactamente en su coordenada
+        ctx.arc(b.x * TAM_CASILLA, b.y * TAM_CASILLA, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -522,7 +524,7 @@ function dibujarBalasEnemigas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(b.x * TAM_CASILLA + TAM_CASILLA / 2, b.y * TAM_CASILLA + TAM_CASILLA / 2, 5, 0, Math.PI * 2);
+        ctx.arc(b.x * TAM_CASILLA, b.y * TAM_CASILLA, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -535,11 +537,11 @@ function dibujarExplosiones() {
         const tam = (1 - exp.vida / exp.maxVida) * TAM_CASILLA * 2;
         ctx.fillStyle = '#ff6600';
         ctx.beginPath();
-        ctx.arc(exp.x * TAM_CASILLA + TAM_CASILLA / 2, exp.y * TAM_CASILLA + TAM_CASILLA / 2, tam, 0, Math.PI * 2);
+        ctx.arc(exp.x * TAM_CASILLA, exp.y * TAM_CASILLA, tam, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#ffff00';
         ctx.beginPath();
-        ctx.arc(exp.x * TAM_CASILLA + TAM_CASILLA / 2, exp.y * TAM_CASILLA + TAM_CASILLA / 2, tam * 0.5, 0, Math.PI * 2);
+        ctx.arc(exp.x * TAM_CASILLA, exp.y * TAM_CASILLA, tam * 0.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     });
@@ -553,11 +555,9 @@ function puedeMover(x, y) {
     return mapa[casY][casX] === VACIO;
 }
 
+// Corrección 3: Simplificar colisión de enemigos
 function puedeMoverEnemigo(x, y) {
-    const casX = Math.floor(x + 0.5);
-    const casY = Math.floor(y + 0.5);
-    if (casX < 0 || casY < 0 || casX >= ANCHO || casY >= ALTO) return false;
-    return mapa[casY][casX] === VACIO;
+    return puedeMover(x, y);
 }
 
 // === MOVIMIENTO JUGADOR ===
@@ -570,9 +570,11 @@ function moverJugador(dx, dy) {
 
     const nx = jugador.x + dx * 0.12;
     const ny = jugador.y + dy * 0.12;
-    const tam = 0.4;
-    if (puedeMover(nx, ny) && puedeMover(nx + tam, ny) &&
-        puedeMover(nx, ny + tam) && puedeMover(nx + tam, ny + tam)) {
+    
+    // Corrección 2: Usar un radio para comprobar las 4 esquinas del tanque desde su centro
+    const radio = 0.35; 
+    if (puedeMover(nx - radio, ny - radio) && puedeMover(nx + radio, ny - radio) &&
+        puedeMover(nx - radio, ny + radio) && puedeMover(nx + radio, ny + radio)) {
         jugador.x = nx;
         jugador.y = ny;
     }
@@ -587,9 +589,10 @@ function disparar() {
     if (ahora - jugador.ultimoDisparo < 400) return;
     jugador.ultimoDisparo = ahora;
 
+    // Corrección 4: Hacer que la bala salga exactamente a 0.75 de distancia (la punta del cañón)
     balas.push({
-        x: jugador.x + 0.5 + jugador.dirX * 1.1,
-        y: jugador.y + 0.5 + jugador.dirY * 1.1,
+        x: jugador.x + jugador.dirX * 0.75,
+        y: jugador.y + jugador.dirY * 0.75,
         dx: jugador.dirX,
         dy: jugador.dirY
     });
@@ -606,9 +609,10 @@ function disparoEnemigo(enemigo) {
     const dirX = dx / dist;
     const dirY = dy / dist;
 
+    // Corrección 5: Disparo enemigo exacto desde su cañón
     balasEnemigas.push({
-        x: enemigo.x + 0.5 + dirX * 0.95,
-        y: enemigo.y + 0.5 + dirY * 0.95,
+        x: enemigo.x + dirX * 0.65,
+        y: enemigo.y + dirY * 0.65,
         dx: dirX,
         dy: dirY
     });
@@ -634,13 +638,15 @@ function actualizarBalas() {
             balas.splice(i, 1);
             continue;
         }
+        
+        // Corrección 7: Arreglar la zona de choque de los enemigos
         let idx = enemigos.findIndex(e =>
-            Math.abs(e.x + 0.5 - nx) < 0.6 && Math.abs(e.y + 0.5 - ny) < 0.6
+            Math.abs(e.x - nx) < 0.6 && Math.abs(e.y - ny) < 0.6
         );
         if (idx !== -1) {
             enemigos.splice(idx, 1);
             reproducirSonido('derrotarEnemigo');
-            explosiones.push({ x: nx - 0.5, y: ny - 0.5, vida: 25, maxVida: 25 });
+            explosiones.push({ x: nx, y: ny, vida: 25, maxVida: 25 });
             balas.splice(i, 1);
             actualizarUI();
             comprobarFinNivel();
@@ -666,8 +672,8 @@ function actualizarBalasEnemigas() {
             continue;
         }
 
-        if (!JUGADOR_MUERTO && Math.abs(nx - jugador.x - 0.5) < 0.5 &&
-            Math.abs(ny - jugador.y - 0.5) < 0.5) {
+        if (!JUGADOR_MUERTO && Math.abs(nx - jugador.x) < 0.5 &&
+            Math.abs(ny - jugador.y) < 0.5) {
             balasEnemigas.splice(i, 1);
             JUGADOR_MUERTO = true;
             reproducirSonido('explosion');
