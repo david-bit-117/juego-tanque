@@ -164,7 +164,6 @@ function iniciarAudio() {
     }
 }
 
-// 🎵 MÚSICA DE FONDO
 function iniciarMusicaFondo() {
     if (!audioCtx || musicaReproduciendo) return;
     musicaReproduciendo = true;
@@ -191,7 +190,6 @@ function iniciarMusicaFondo() {
     generarMelodia();
 }
 
-// 🔊 Efectos de sonido
 function reproducirSonido(tipo) {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
@@ -267,7 +265,6 @@ function reproducirSonido(tipo) {
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const TAM_CASILLA = 32;
-// Corrección 1: Usar Math.floor para evitar decimales que rompen las paredes
 const ANCHO = Math.floor(canvas.width / TAM_CASILLA);
 const ALTO = Math.floor(canvas.height / TAM_CASILLA);
 
@@ -309,13 +306,11 @@ function generarMapa() {
             }
         }
     }
-    // Paredes en patrón
     for (let y = 2; y < ALTO - 1; y += 2) {
         for (let x = 2; x < ANCHO - 1; x += 2) {
             mapa[y][x] = PARED;
         }
     }
-    // Bloques rompibles
     let probabilidad = 0.28 + (nivel * 0.04);
     for (let y = 1; y < ALTO - 1; y++) {
         for (let x = 1; x < ANCHO - 1; x++) {
@@ -328,7 +323,6 @@ function generarMapa() {
     }
 }
 
-// === MOSTRAR MENSAJE DE NIVEL ===
 function mostrarMensajeNivel(mensaje, callback) {
     const caja = document.getElementById('mensajeNivel');
     caja.innerHTML = mensaje;
@@ -412,7 +406,7 @@ function dibujarMapa() {
     }
 }
 
-// ✅ === DIBUJAR TANQUE ===
+// === DIBUJAR TANQUE ===
 function dibujarCarro() {
     const cx = jugador.x * TAM_CASILLA;
     const cy = jugador.y * TAM_CASILLA;
@@ -458,21 +452,23 @@ function dibujarCarro() {
     ctx.restore();
 }
 
-// ✅ === DIBUJAR ENEMIGO ===
+// === DIBUJAR ENEMIGO ===
 function dibujarMoto(enemigo) {
     const cx = enemigo.x * TAM_CASILLA;
     const cy = enemigo.y * TAM_CASILLA;
     const tam = TAM_CASILLA * 0.65;
 
-    let angulo = 0;
-    if (enemigo.dx === 1) angulo = 0;
-    else if (enemigo.dy === 1) angulo = Math.PI / 2;
-    else if (enemigo.dx === -1) angulo = Math.PI;
-    else if (enemigo.dy === -1) angulo = -Math.PI / 2;
-
+    // 1. Cuerpo de la moto (gira dependiendo hacia donde conduce)
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.rotate(angulo);
+    
+    let anguloMov = 0;
+    if (enemigo.dx === 1) anguloMov = 0;
+    else if (enemigo.dy === 1) anguloMov = Math.PI / 2;
+    else if (enemigo.dx === -1) anguloMov = Math.PI;
+    else if (enemigo.dy === -1) anguloMov = -Math.PI / 2;
+    
+    ctx.rotate(anguloMov);
 
     ctx.fillStyle = '#e74c3c';
     ctx.beginPath();
@@ -487,8 +483,15 @@ function dibujarMoto(enemigo) {
     ctx.beginPath(); ctx.arc(-tam / 3, tam / 3, 5, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(tam / 3, -tam / 3, 5, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(tam / 3, tam / 3, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore(); // Termina de dibujar el cuerpo
 
-    // Cañón enemigo
+    // 2. Cañón (gira independientemente apuntando siempre hacia tu tanque)
+    ctx.save();
+    ctx.translate(cx, cy);
+    
+    let anguloTiro = Math.atan2(jugador.y - enemigo.y, jugador.x - enemigo.x);
+    ctx.rotate(anguloTiro);
+
     ctx.fillStyle = '#922b21';
     ctx.fillRect(0, -3, tam / 2 + 10, 6);
     ctx.fillStyle = '#ff6600';
@@ -499,7 +502,7 @@ function dibujarMoto(enemigo) {
     ctx.closePath();
     ctx.fill();
 
-    ctx.restore();
+    ctx.restore(); // Termina de dibujar el cañón
 }
 
 // === DIBUJAR BALAS ===
@@ -510,7 +513,6 @@ function dibujarBalas() {
         ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffd700';
         ctx.beginPath();
-        // Corrección 6: Dibujar la bala exactamente en su coordenada
         ctx.arc(b.x * TAM_CASILLA, b.y * TAM_CASILLA, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
@@ -555,7 +557,6 @@ function puedeMover(x, y) {
     return mapa[casY][casX] === VACIO;
 }
 
-// Corrección 3: Simplificar colisión de enemigos
 function puedeMoverEnemigo(x, y) {
     return puedeMover(x, y);
 }
@@ -571,7 +572,6 @@ function moverJugador(dx, dy) {
     const nx = jugador.x + dx * 0.12;
     const ny = jugador.y + dy * 0.12;
     
-    // Corrección 2: Usar un radio para comprobar las 4 esquinas del tanque desde su centro
     const radio = 0.35; 
     if (puedeMover(nx - radio, ny - radio) && puedeMover(nx + radio, ny - radio) &&
         puedeMover(nx - radio, ny + radio) && puedeMover(nx + radio, ny + radio)) {
@@ -581,7 +581,7 @@ function moverJugador(dx, dy) {
     comprobarChoqueEnemigos();
 }
 
-// ✅ === DISPARO JUGADOR ===
+// === DISPARO JUGADOR ===
 function disparar() {
     if (JUGADOR_MUERTO) return;
     iniciarAudio();
@@ -589,17 +589,17 @@ function disparar() {
     if (ahora - jugador.ultimoDisparo < 400) return;
     jugador.ultimoDisparo = ahora;
 
-    // Corrección 4: Hacer que la bala salga exactamente a 0.75 de distancia (la punta del cañón)
+    // La distancia de 0.95 cuadra los píxeles exactos con la punta del cañón
     balas.push({
-        x: jugador.x + jugador.dirX * 0.75,
-        y: jugador.y + jugador.dirY * 0.75,
+        x: jugador.x + jugador.dirX * 0.95,
+        y: jugador.y + jugador.dirY * 0.95,
         dx: jugador.dirX,
         dy: jugador.dirY
     });
     reproducirSonido('disparo');
 }
 
-// ✅ === DISPARO ENEMIGO ===
+// === DISPARO ENEMIGO ===
 function disparoEnemigo(enemigo) {
     const dx = jugador.x - enemigo.x;
     const dy = jugador.y - enemigo.y;
@@ -609,10 +609,10 @@ function disparoEnemigo(enemigo) {
     const dirX = dx / dist;
     const dirY = dy / dist;
 
-    // Corrección 5: Disparo enemigo exacto desde su cañón
+    // La distancia de 0.85 cuadra exacto con la punta del cañón enemigo
     balasEnemigas.push({
-        x: enemigo.x + dirX * 0.65,
-        y: enemigo.y + dirY * 0.65,
+        x: enemigo.x + dirX * 0.85,
+        y: enemigo.y + dirY * 0.85,
         dx: dirX,
         dy: dirY
     });
@@ -639,7 +639,6 @@ function actualizarBalas() {
             continue;
         }
         
-        // Corrección 7: Arreglar la zona de choque de los enemigos
         let idx = enemigos.findIndex(e =>
             Math.abs(e.x - nx) < 0.6 && Math.abs(e.y - ny) < 0.6
         );
